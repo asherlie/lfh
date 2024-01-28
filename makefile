@@ -1,9 +1,10 @@
 CC=gcc
 CFLAGS= -Wall -Wextra -Werror -lpthread
 
-all: lfh
+all: test
 
-lfh: lfh.c
+test: lfh.h test.c
+lfh.o: lfh.h
 
 .PHONY:
 clean:
