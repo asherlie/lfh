@@ -1,3 +1,4 @@
+// TODO: entries must be atomic, look below where i'm using CAS
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -48,10 +49,6 @@
         struct entry_pair_##name kvcmp; \
         struct entry_##name* nil_entry = NULL; \
         struct entry_##name* new_e = malloc(sizeof(struct entry_##name)); \
-        /* ugh, these need to be atomically set, maybe entries should be atomic btw and not these... \
-        either way, though, i can use new_e->kv instead of duplicating
-            IS THERE ANY REASON TO HAVE KV BE ATOMIC INSTEAD OF ENTRY?
-        */ \
         kv.k = key; \
         kv.v = val; \
         atomic_store(&new_e->kv, kv); \
@@ -68,14 +65,6 @@
                 atomic_store(&e->kv, kv); \
                 return; \
             } \
-            /*i might not even need this CAS, i could just check the value after atomic_load
-             * i can then atomic_write() or atomic_exchange(). CAS() must be used for overwriting
-             * of NULL entries because there's a chance that another thread has claimed
-             * that index, this concern does not exist for overwrites of an identical key
-             *
-             * how do i deal with expanding buckets?
-             * NVM... it's a linked list... i hadn't thought of this*/ \
-            /* atomic_compare_exchange_strong((_Atomic keytype*)&e->kv, &key, kv); */ \
         } \
         /* TODO: is this even valid? last->next is not atomic */ \
         if (!atomic_compare_exchange_strong(&last->next, &nil_entry, new_e)) { \
@@ -97,8 +86,4 @@
             } \
         } \
         return kv.v; \
-    } \
-\
-    (void)init_##name; \
-    (void)insert_##name; \
-    (void)lookup_##name; 
+    }
