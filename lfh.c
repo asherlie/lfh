@@ -61,10 +61,8 @@
         if (atomic_compare_exchange_strong(&b->e, &nil_entry, new_e)) { \
             return; \
         } \
-        printf("%p\n", b->e); \
         for (struct entry_##name* e = b->e; e; e = e->next) { \
             last = e;\
-            printf("%p\n", last); \
             kvcmp = atomic_load(&e->kv); \
             if (!memcmp(&kvcmp.k, &key, sizeof(keytype))) { \
                 atomic_store(&e->kv, kv); \
@@ -87,9 +85,14 @@
 \
     valtype* lookup_lfh_##name(struct lfh_##name* l, keytype key) { \
         uint16_t idx = l->hashfunc(key) % l->n_buckets; \
+        struct entry_pair_##name kv; \
         struct bucket_##name* b = &l->buckets[idx];  \
 \
         for (struct entry_##name* e = b->e; e; e = e->next) { \
+            kv = atomic_load(&e->kv); \
+            if (kv.k == key){ \
+                return &kv.v; \
+            } \
         } \
         return NULL; \
     } \
