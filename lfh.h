@@ -102,27 +102,3 @@
     (void)init_lfh_##name; \
     (void)insert_lfh_##name; \
     (void)lookup_lfh_##name; 
-
-uint16_t hfunc(int x) {
-    return x;
-}
-
-int main(){
-    INIT_LFH(int, int, ashmap);
-    struct lfh_ashmap m;
-    init_lfh_ashmap(&m, 100, hfunc);
-
-    for (int i = 0; i < 100; ++i) {
-        insert_lfh_ashmap(&m, 100, i);
-    }
-}
-
-/*
- * lfh:
- *  buckets:
- *      entries:
- *          k/v
- *
- *
- *          lfh[0]: bucket[0] k/v
- */
