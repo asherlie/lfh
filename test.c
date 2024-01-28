@@ -31,7 +31,7 @@ int main(){
     init_networth(&net, 100, nwfunc);
 
     for (int i = 0; i < 1000; ++i) {
-        insert_ashmap(&m, 100, i);
+        insert_ashmap(&m, 100+i, i);
     }
 
     printf("ashmap: %i\n", lookup_ashmap(&m, 100, &found));
@@ -43,5 +43,10 @@ int main(){
     lookup_ptrptr(&pp, NULL, &found);
 
     insert_networth(&net, "john", 99.3);
+    insert_networth(&net, "john", 99.399);
+    insert_networth(&net, "John", 99.399);
+    insert_networth(&net, "john", -1);
     print_networth(&net, "\"%s\": %f");
+
+    print_ashmap(&m, "%i: %i");
 }

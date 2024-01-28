@@ -41,7 +41,7 @@
         struct entry_pair_##name kv; \
         struct entry_##name* last; \
         struct entry_pair_##name kvcmp; \
-        struct entry_##name* nil_entry = NULL; \
+        struct entry_##name* nil_entry; \
         struct entry_##name* new_e = malloc(sizeof(struct entry_##name)); \
         kv.k = key; \
         kv.v = val; \
@@ -49,6 +49,7 @@
         new_e->next = NULL; \
         insert_overwrite: \
         /* dealing with first insertion */ \
+        nil_entry = NULL; \
         if (atomic_compare_exchange_strong(&b->e, &nil_entry, new_e)) { \
             return; \
         } \
@@ -61,6 +62,7 @@
             } \
         } \
         /* TODO: is this even valid? last->next is not atomic, oh god, this is not threadsafe... last coudl no longer be last */ \
+        nil_entry = NULL; \
         if (!atomic_compare_exchange_strong(&last->next, &nil_entry, new_e)) { \
             goto insert_overwrite; \
         } \
@@ -93,6 +95,7 @@
                 kv = atomic_load(&e->kv); \
                 printf("  [%li] ", sz); \
                 printf(fmtstr, kv.k, kv.v); \
+                puts(""); \
                 ++sz; \
             } \
         } \
