@@ -4,8 +4,10 @@ uint16_t hfunc(int x) {
     return x;
 }
 
+    INIT_LFH(int, int, ashmap)
+    INIT_LFH(int*, int, ashmap_ptr)
 int main(){
-    INIT_LFH(int, int, ashmap);
+
     ashmap m;
     _Bool found;
     init_ashmap(&m, 100, hfunc);

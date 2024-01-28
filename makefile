@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Wall -Wextra -Werror -lpthread
+CFLAGS= -Wall -Wextra -Werror -latomic
 
 all: test
 
@@ -8,4 +8,4 @@ lfh.o: lfh.h
 
 .PHONY:
 clean:
-	rm -f lfh *.o
+	rm -f test *.o
