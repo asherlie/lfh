@@ -84,6 +84,19 @@
             goto insert_overwrite; \
         } \
     } \
+\
+    valtype* lookup_lfh_##name(struct lfh_##name* l, keytype key) { \
+        uint16_t idx = l->hashfunc(key) % l->n_buckets; \
+        struct bucket_##name* b = &l->buckets[idx];  \
+\
+        for (struct entry_##name* e = b->e; e; e = e->next) { \
+        } \
+        return NULL; \
+    } \
+\
+    (void)init_lfh_##name; \
+    (void)insert_lfh_##name; \
+    (void)lookup_lfh_##name; 
 
 uint16_t hfunc(int x) {
     return x;
@@ -93,8 +106,10 @@ int main(){
     INIT_LFH(int, int, ashmap);
     struct lfh_ashmap m;
     init_lfh_ashmap(&m, 100, hfunc);
-    insert_lfh_ashmap(&m, 100, 9);
-    insert_lfh_ashmap(&m, 100, 90);
+
+    for (int i = 0; i < 100; ++i) {
+        insert_lfh_ashmap(&m, 100, i);
+    }
 }
 
 /*
