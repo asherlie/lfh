@@ -19,14 +19,14 @@
         struct entry_##name* e; \
     }; \
  \
-    struct lfh_##name{ \
+    typedef struct lfh_##name{ \
         uint16_t n_buckets; \
         size_t keysz, valsz; \
         struct bucket_##name* buckets; \
         uint16_t (*hashfunc)(keytype); \
-    }; \
+    }name; \
  \
-    void init_lfh_##name(struct lfh_##name* l, uint16_t n_buckets, uint16_t (*hashfunc)(keytype)) { \
+    void init_##name(name* l, uint16_t n_buckets, uint16_t (*hashfunc)(keytype)) { \
         l->keysz = sizeof(keytype); \
         l->valsz = sizeof(valtype); \
         l->n_buckets = n_buckets; \
@@ -40,7 +40,7 @@
         l->hashfunc = hashfunc; \
     } \
  \
-    void insert_lfh_##name(struct lfh_##name* l, keytype key, valtype val){ \
+    void insert_##name(name* l, keytype key, valtype val){ \
         uint16_t idx = l->hashfunc(key) % l->n_buckets; \
         struct bucket_##name* b = &l->buckets[idx]; \
         struct entry_pair_##name kv; \
@@ -83,7 +83,7 @@
         } \
     } \
 \
-    valtype lookup_lfh_##name(struct lfh_##name* l, keytype key, _Bool* found) { \
+    valtype lookup_##name(name* l, keytype key, _Bool* found) { \
         uint16_t idx = l->hashfunc(key) % l->n_buckets; \
         struct entry_pair_##name kv = {0}; \
         struct bucket_##name* b = &l->buckets[idx];  \
@@ -99,6 +99,6 @@
         return kv.v; \
     } \
 \
-    (void)init_lfh_##name; \
-    (void)insert_lfh_##name; \
-    (void)lookup_lfh_##name; 
+    (void)init_##name; \
+    (void)insert_##name; \
+    (void)lookup_##name; 
