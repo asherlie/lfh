@@ -83,18 +83,20 @@
         } \
     } \
 \
-    valtype* lookup_lfh_##name(struct lfh_##name* l, keytype key) { \
+    valtype lookup_lfh_##name(struct lfh_##name* l, keytype key, _Bool* found) { \
         uint16_t idx = l->hashfunc(key) % l->n_buckets; \
-        struct entry_pair_##name kv; \
+        struct entry_pair_##name kv = {0}; \
         struct bucket_##name* b = &l->buckets[idx];  \
+        *found = 0; \
 \
         for (struct entry_##name* e = b->e; e; e = e->next) { \
             kv = atomic_load(&e->kv); \
             if (kv.k == key){ \
-                return &kv.v; \
+                *found = 1; \
+                return kv.v; \
             } \
         } \
-        return NULL; \
+        return kv.v; \
     } \
 \
     (void)init_lfh_##name; \
