@@ -32,12 +32,6 @@
         l->valsz = sizeof(valtype); \
         l->n_buckets = n_buckets; \
         l->buckets = calloc(sizeof(struct bucket_##name), l->n_buckets); \
-        /* \
-         * for (uint16_t i = 0; i < l->n_buckets; ++i) { \
-         *     l->buckets[i].sz = 0; \
-         *     l->buckets[i].cap  = 0; \
-         * } \
-        */ \
         l->hashfunc = hashfunc; \
     } \
  \
@@ -66,7 +60,7 @@
                 return; \
             } \
         } \
-        /* TODO: is this even valid? last->next is not atomic */ \
+        /* TODO: is this even valid? last->next is not atomic, oh god, this is not threadsafe... last coudl no longer be last */ \
         if (!atomic_compare_exchange_strong(&last->next, &nil_entry, new_e)) { \
             goto insert_overwrite; \
         } \
