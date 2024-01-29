@@ -35,7 +35,7 @@ void* insert_test_thread(void* arg){
 }
 // n_threads are used to insert simulatneously into an int: int map 
 // each
-void threadsafety_test(int n_threads, int total_insertions){
+void threadsafety_test(int n_buckets, int n_threads, int total_insertions){
     ashmap m;
     struct tsafe_test* tst;
     int ins_per_thread = total_insertions/n_threads;
@@ -43,7 +43,7 @@ void threadsafety_test(int n_threads, int total_insertions){
     uint64_t sz;
     _Bool found;
 
-    init_ashmap(&m, 100, hfunc);
+    init_ashmap(&m, n_buckets, hfunc);
     pthread_t* pth = malloc(sizeof(pth)*n_threads);
 
     for (int i = 0; i < n_threads; ++i) {
@@ -105,5 +105,5 @@ void single_thread_tests(){
 }
 
 int main(){
-    threadsafety_test(10, 3000);
+    threadsafety_test(10, 20, 30000);
 }
