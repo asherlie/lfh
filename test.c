@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <assert.h>
 
 #include "lfh.h"
 
@@ -38,6 +39,9 @@ void threadsafety_test(int n_threads, int total_insertions){
     ashmap m;
     struct tsafe_test* tst;
     int ins_per_thread = total_insertions/n_threads;
+    int val;
+    uint64_t sz;
+    _Bool found;
 
     init_ashmap(&m, 100, hfunc);
     pthread_t* pth = malloc(sizeof(pth)*n_threads);
@@ -55,7 +59,15 @@ void threadsafety_test(int n_threads, int total_insertions){
         printf("joined thread %i\n", i);
     }
 
-    print_ashmap(&m, "%i: %i");
+    for (int i = 0; i < total_insertions; ++i) {
+        val = lookup_ashmap(&m, i, &found);
+        assert(found && val == i);
+    }
+
+    fclose(stderr);
+    sz = fprint_ashmap(&m, "%i: %i", stderr);
+
+    assert(sz == (uint64_t)total_insertions);
 }
 
 void single_thread_tests(){
@@ -87,11 +99,11 @@ void single_thread_tests(){
     insert_networth(&net, "john", 99.399);
     insert_networth(&net, "John", 99.399);
     insert_networth(&net, "john", -1);
-    print_networth(&net, "\"%s\": %f");
+    fprint_networth(&net, "\"%s\": %f", stdout);
 
-    print_ashmap(&m, "%i: %i");
+    fprint_ashmap(&m, "%i: %i", stdout);
 }
 
 int main(){
-    threadsafety_test(10, 30);
+    threadsafety_test(10, 3000);
 }
