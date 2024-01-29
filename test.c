@@ -1,3 +1,5 @@
+#include <pthread.h>
+
 #include "lfh.h"
 
 uint16_t hfunc(int x) {
@@ -17,7 +19,46 @@ INIT_LFH(int*, int, ashmap_ptr)
 INIT_LFH(int*, int*, ptrptr)
 INIT_LFH(char*, float, networth)
 
-int main(){
+
+struct tsafe_test{
+    int insertions;
+    int thread_base;
+    ashmap* m;
+};
+void* insert_test_thread(void* arg){
+    struct tsafe_test* tst = arg;
+    for (int i = 0; i < tst->insertions; ++i) {
+        insert_ashmap(tst->m, tst->thread_base + i, tst->thread_base + i);
+    }
+    return NULL;
+}
+// n_threads are used to insert simulatneously into an int: int map 
+// each
+void threadsafety_test(int n_threads, int total_insertions){
+    ashmap m;
+    struct tsafe_test* tst;
+    int ins_per_thread = total_insertions/n_threads;
+
+    init_ashmap(&m, 100, hfunc);
+    pthread_t* pth = malloc(sizeof(pth)*n_threads);
+
+    for (int i = 0; i < n_threads; ++i) {
+        tst = malloc(sizeof(struct tsafe_test));
+        tst->m = &m;
+        tst->thread_base = i*ins_per_thread;
+        tst->insertions = ins_per_thread;
+        pthread_create(pth+i, NULL, insert_test_thread, tst);
+    }
+
+    for (int i = 0; i < n_threads; ++i) {
+        pthread_join(pth[i], NULL);
+        printf("joined thread %i\n", i);
+    }
+
+    print_ashmap(&m, "%i: %i");
+}
+
+void single_thread_tests(){
 
     ashmap m;
     ashmap_ptr mp;
@@ -49,4 +90,8 @@ int main(){
     print_networth(&net, "\"%s\": %f");
 
     print_ashmap(&m, "%i: %i");
+}
+
+int main(){
+    threadsafety_test(10, 30);
 }
