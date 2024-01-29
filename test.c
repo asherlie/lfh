@@ -15,10 +15,10 @@ uint16_t nwfunc(char* x) {
     return (x) ? *x : 0;
 }
 
-INIT_LFH(int, int, ashmap)
-INIT_LFH(int*, int, ashmap_ptr)
-INIT_LFH(int*, int*, ptrptr)
-INIT_LFH(char*, float, networth)
+register_lockfree_hash(int, int, ashmap)
+register_lockfree_hash(int*, int, ashmap_ptr)
+register_lockfree_hash(int*, int*, ptrptr)
+register_lockfree_hash(char*, float, networth)
 
 
 struct tsafe_test{

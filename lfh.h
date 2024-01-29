@@ -6,7 +6,7 @@
 #include <stdatomic.h>
 #include <stdint.h>
 
-#define INIT_LFH(keytype, valtype, name) \
+#define register_lockfree_hash(keytype, valtype, name) \
     typedef struct entry_pair_##name{ \
         keytype k; \
         valtype v; \
@@ -23,14 +23,11 @@
  \
     typedef struct lfh_##name{ \
         uint16_t n_buckets; \
-        size_t keysz, valsz; \
         struct bucket_##name* buckets; \
         uint16_t (*hashfunc)(keytype); \
     }name; \
  \
     void init_##name(name* l, uint16_t n_buckets, uint16_t (*hashfunc)(keytype)) { \
-        l->keysz = sizeof(keytype); \
-        l->valsz = sizeof(valtype); \
         l->n_buckets = n_buckets; \
         l->buckets = calloc(sizeof(struct bucket_##name), l->n_buckets); \
         l->hashfunc = hashfunc; \
@@ -62,7 +59,6 @@
                 return; \
             } \
         } \
-        /* TODO: is this even valid? last->next is not atomic, oh god, this is not threadsafe... last coudl no longer be last */ \
         nil_entry = NULL; \
         if (!atomic_compare_exchange_strong(&last->next, &nil_entry, new_e)) { \
             goto insert_overwrite; \
