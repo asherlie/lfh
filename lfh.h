@@ -17,8 +17,8 @@
         struct entry_##name* _Atomic next; \
     }; \
  \
+    /* there's now no need for this struct to exist */ \
     struct bucket_##name{ \
-        uint64_t sz, cap; \
         struct entry_##name* _Atomic e; \
     }; \
  \
