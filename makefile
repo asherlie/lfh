@@ -4,7 +4,6 @@ CFLAGS= -Wall -Wextra -Werror -latomic
 all: test
 
 test: lfh.h test.c
-lfh.o: lfh.h
 
 .PHONY:
 clean:

@@ -1,4 +1,5 @@
 // TODO: entries must be atomic, look below where i'm using CAS
+// TODO: should removal be possible? it may be safer to just allow the user to overwrite
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
