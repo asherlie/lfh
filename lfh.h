@@ -13,12 +13,13 @@
     }entry_pair_##name; \
     struct entry_##name{ \
         _Atomic entry_pair_##name kv; \
-        struct entry_##name* next; \
+        /* this syntax provides an _Atomic pointer to a non-_Atomic variable, see below as well. */ \
+        struct entry_##name* _Atomic next; \
     }; \
  \
     struct bucket_##name{ \
         uint64_t sz, cap; \
-        struct entry_##name* e; \
+        struct entry_##name* _Atomic e; \
     }; \
  \
     typedef struct lfh_##name{ \
@@ -51,8 +52,8 @@
         if (atomic_compare_exchange_strong(&b->e, &nil_entry, new_e)) { \
             return; \
         } \
-        for (struct entry_##name* e = b->e; e; e = e->next) { \
-            last = e;\
+        for (struct entry_##name* e = atomic_load(&b->e); e; e = atomic_load(&e->next)) { \
+            last = e; \
             kvcmp = atomic_load(&e->kv); \
             if (!memcmp(&kvcmp.k, &key, sizeof(keytype))) { \
                 atomic_store(&e->kv, kv); \
@@ -71,7 +72,7 @@
         struct bucket_##name* b = &l->buckets[idx];  \
         *found = 0; \
 \
-        for (struct entry_##name* e = b->e; e; e = e->next) { \
+        for (struct entry_##name* e = atomic_load(&b->e); e; e = atomic_load(&e->next)) { \
             kv = atomic_load(&e->kv); \
             if (kv.k == key){ \
                 *found = 1; \
@@ -88,7 +89,7 @@
             if (l->buckets[i].e) { \
                 fprintf(fp, "buckets[%i]:\n", i); \
             } \
-            for (struct entry_##name* e = l->buckets[i].e; e; e = e->next) { \
+            for (struct entry_##name* e = atomic_load(&l->buckets[i].e); e; e = atomic_load(&e->next)) { \
                 kv = atomic_load(&e->kv); \
                 fprintf(fp, "  [%li] ", sz); \
                 fprintf(fp, fmtstr, kv.k, kv.v); \
