@@ -85,20 +85,21 @@
         return kv.v; \
     } \
  \
-    void print_##name(name* l, const char* fmtstr) { \
+    uint64_t fprint_##name(name* l, const char* fmtstr, FILE* fp) { \
         uint64_t sz = 0; \
         struct entry_pair_##name kv; \
         for (uint16_t i = 0; i < l->n_buckets; ++i) { \
             if (l->buckets[i].e) { \
-                printf("buckets[%i]:\n", i); \
+                fprintf(fp, "buckets[%i]:\n", i); \
             } \
             for (struct entry_##name* e = l->buckets[i].e; e; e = e->next) { \
                 kv = atomic_load(&e->kv); \
-                printf("  [%li] ", sz); \
-                printf(fmtstr, kv.k, kv.v); \
-                puts(""); \
+                fprintf(fp, "  [%li] ", sz); \
+                fprintf(fp, fmtstr, kv.k, kv.v); \
+                fprintf(fp, "\n"); \
                 ++sz; \
             } \
         } \
-        printf("%li keys found\n", sz); \
+        fprintf(fp, "%li keys found\n", sz); \
+        return sz; \
     }
