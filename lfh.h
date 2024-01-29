@@ -74,7 +74,7 @@
 \
         for (struct entry_##name* e = atomic_load(&b->e); e; e = atomic_load(&e->next)) { \
             kv = atomic_load(&e->kv); \
-            if (kv.k == key){ \
+            if (!memcmp(&kv.k, &key, sizeof(keytype))){ \
                 *found = 1; \
                 return kv.v; \
             } \

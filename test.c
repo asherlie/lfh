@@ -104,6 +104,41 @@ void single_thread_tests(){
     fprint_ashmap(&m, "%i: %i", stdout);
 }
 
+struct stest{
+    char name[5];
+    float value;
+    int n;
+};
+
+uint16_t sthash(struct stest st){
+    return ((uint16_t)st.value + st.n) * st.name[2];
+}
+
+register_lockfree_hash(struct stest, void*, strt)
+
+void struct_test(){
+    strt m;
+    _Bool found;
+    struct stest st;
+
+    st.value = 94.21;
+    st.n = 99;
+    strcpy(st.name, "asher");
+
+    init_strt(&m, 100, sthash);
+    insert_strt(&m, st, NULL);
+
+    lookup_strt(&m, st, &found);
+    assert(found);
+    ++st.name[0];
+    lookup_strt(&m, st, &found);
+    assert(!found);
+    --st.name[0];
+    lookup_strt(&m, st, &found);
+    assert(found);
+}
+
 int main(){
-    threadsafety_test(10, 20, 30000);
+    threadsafety_test(100, 10, 30000);
+    struct_test();
 }
