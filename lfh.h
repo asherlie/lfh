@@ -7,13 +7,13 @@
 #include <stdint.h>
 
 #define register_lockfree_hash(keytype, valtype, name) \
-    /* TODO: only valtype must be _Atomic! this will silence our clang warnings */ \
     struct entry_pair_##name{ \
         keytype k; \
-        valtype v; \
+        /* this is need for ptr keytype, TODO: make sure this has intended behavior */ \
+        valtype _Atomic v; \
     }; \
     struct entry_##name{ \
-        _Atomic struct entry_pair_##name kv; \
+        struct entry_pair_##name kv; \
         /* this syntax provides an _Atomic pointer to a non-_Atomic variable, see below as well. */ \
         struct entry_##name* _Atomic next; \
     }; \
@@ -37,14 +37,11 @@
  \
     void insert_##name(name* l, keytype key, valtype val){ \
         uint16_t idx = l->hashfunc(key) % l->n_buckets; \
-        struct entry_pair_##name kv; \
         struct entry_##name* last; \
-        struct entry_pair_##name kvcmp; \
         struct entry_##name* nil_entry; \
         struct entry_##name* new_e = malloc(sizeof(struct entry_##name)); \
-        kv.k = key; \
-        kv.v = val; \
-        atomic_store(&new_e->kv, kv); \
+        new_e->kv.k = key;\
+        atomic_store(&new_e->kv.v, val); \
         new_e->next = NULL; \
         insert_overwrite: \
         /* dealing with first insertion */ \
@@ -76,9 +73,8 @@
          */ \
         for (struct entry_##name* ep = atomic_load(&l->buckets[idx]); ep; ep = atomic_load(&ep->next)) { \
             last = ep; \
-            kvcmp = atomic_load(&ep->kv); \
-            if (!memcmp(&kvcmp.k, &key, sizeof(keytype))) { \
-                atomic_store(&ep->kv, kv); \
+            if (!memcmp(&ep->kv.k, &key, sizeof(keytype))) { \
+                atomic_store(&ep->kv.v, val); \
                 return; \
             } \
         } \
@@ -89,31 +85,34 @@
     } \
 \
     valtype lookup_##name(name* l, keytype key, _Bool* found) { \
+        valtype ret; \
         uint16_t idx = l->hashfunc(key) % l->n_buckets; \
-        struct entry_pair_##name kv = {0}; \
+\
+        memset(&ret, 0, sizeof(valtype)); \
         *found = 0; \
 \
         for (struct entry_##name* ep = atomic_load(&l->buckets[idx]); ep; ep = atomic_load(&ep->next)) { \
-            kv = atomic_load(&ep->kv); \
-            if (!memcmp(&kv.k, &key, sizeof(keytype))){ \
+            if (!memcmp(&ep->kv.k, &key, sizeof(keytype))){ \
                 *found = 1; \
-                return kv.v; \
+                /* interesting! this is only failing with pointer keys! value can be anything, pointer KEYS are bad */ \
+                ret = atomic_load(&ep->kv.v); \
+                return ret; \
             } \
         } \
-        return kv.v; \
+        return ret; \
     } \
  \
     uint64_t fprint_##name(name* l, const char* fmtstr, FILE* fp) { \
         uint64_t sz = 0; \
-        struct entry_pair_##name kv; \
+        valtype v; \
         for (uint16_t i = 0; i < l->n_buckets; ++i) { \
             if (l->buckets[i]) { \
                 fprintf(fp, "buckets[%i]:\n", i); \
             } \
             for (struct entry_##name* ep = atomic_load(&l->buckets[i]); ep; ep = atomic_load(&ep->next)) { \
-                kv = atomic_load(&ep->kv); \
+                v = atomic_load(&ep->kv.v); \
                 fprintf(fp, "  [%li] ", sz); \
-                fprintf(fp, fmtstr, kv.k, kv.v); \
+                fprintf(fp, fmtstr, ep->kv.k, v); \
                 fprintf(fp, "\n"); \
                 ++sz; \
             } \
