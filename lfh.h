@@ -48,20 +48,7 @@
         if (atomic_compare_exchange_strong(&l->buckets[idx], &nil_entry, new_e)) { \
             return; \
         } \
-        /* for the below, the initialization of ep does not need to be atomically loaded, this
-         * will never change once it's non-NULL
-         * ep->next can change, however, when last->next is updated below
-         * entries are never freed/deleted, pointers never changed. this means i can likely not worry
-         * about a new LL path being created. i can just atomic_load() both as is already done below
-         *
-         * my concern is that neither of these atomic_load()s are necessary with my current _Atomic usage
-         *
-         * should i just be using _Atomic (blah) regular style?
-         * logic is sound but is definition?
-         * TODO: do i need an atomic object or just atomic pointer to a regular object?
-         * it seems that behavior doesn't change when either one of these atomic_load()s is removed
-         *      also... it seems unintuitive that the compiler would even allow removing these
-         */ \
+        /* TODO: why does compiler allow removal of atomic_load()s below? */ \
         for (struct entry_##name* ep = atomic_load(&l->buckets[idx]); ep; ep = atomic_load(&ep->next)) { \
             last = ep; \
             if (!memcmp(&ep->kv.k, &key, sizeof(keytype))) { \
