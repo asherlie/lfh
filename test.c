@@ -59,6 +59,7 @@ void threadsafety_test(int n_buckets, int n_threads, int total_insertions){
         printf("joined thread %i\n", i);
     }
 
+    /*fprint_ashmap(&m, "%i: %i", stdout);*/
     for (int i = 0; i < total_insertions; ++i) {
         val = lookup_ashmap(&m, i, &found);
         assert(found && val == i);
@@ -139,6 +140,6 @@ void struct_test(){
 }
 
 int main(){
-    threadsafety_test(100, 10, 30000);
+    threadsafety_test(100, 80, 80000);
     struct_test();
 }

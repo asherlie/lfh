@@ -1,13 +1,13 @@
 // TODO: entries must be atomic, look below where i'm using CAS
 // TODO: should removal be possible? it may be safer to just allow the user to overwrite
 #include <stdio.h>
-#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdatomic.h>
 #include <stdint.h>
 
 #define register_lockfree_hash(keytype, valtype, name) \
+    /* TODO: only valtype must be _Atomic! this will silence our clang warnings */ \
     typedef struct entry_pair_##name{ \
         keytype k; \
         valtype v; \
