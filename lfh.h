@@ -8,12 +8,12 @@
 
 #define register_lockfree_hash(keytype, valtype, name) \
     /* TODO: only valtype must be _Atomic! this will silence our clang warnings */ \
-    typedef struct entry_pair_##name{ \
+    struct entry_pair_##name{ \
         keytype k; \
         valtype v; \
-    }entry_pair_##name; \
+    }; \
     struct entry_##name{ \
-        _Atomic entry_pair_##name kv; \
+        _Atomic struct entry_pair_##name kv; \
         /* this syntax provides an _Atomic pointer to a non-_Atomic variable, see below as well. */ \
         struct entry_##name* _Atomic next; \
     }; \
