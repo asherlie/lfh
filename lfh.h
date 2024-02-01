@@ -8,7 +8,7 @@
 #define register_lockfree_hash(keytype, valtype, name) \
     struct entry_pair_##name{ \
         keytype k; \
-        /* this is need for ptr keytype, TODO: make sure this has intended behavior */ \
+        /* this is needed for ptr keytype, TODO: make sure this has intended behavior */ \
         valtype _Atomic v; \
     }; \
     struct entry_##name{ \
