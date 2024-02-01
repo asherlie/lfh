@@ -1,4 +1,3 @@
-// TODO: entries must be atomic, look below where i'm using CAS
 // TODO: should removal be possible? it may be safer to just allow the user to overwrite
 #include <stdio.h>
 #include <string.h>
@@ -46,18 +45,10 @@
         insert_overwrite: \
         /* dealing with first insertion */ \
         nil_entry = NULL; \
-        /*
-         * if (atomic_compare_exchange_strong(&e, &nil_entry, new_e)) { \
-        */ \
         if (atomic_compare_exchange_strong(&l->buckets[idx], &nil_entry, new_e)) { \
             return; \
         } \
-        /* i believe i've brken threadsafety, ep->next isn't atomic... what are the implications of this?
-         * i think that the iterator should be _Atomic. this can be atomic_load()ed just for e = e->next
-         *
-         * thinking through this - the above is perfect, sets entry atomically if NULL
-         *
-         * for the below, the initialization of ep does not need to be atomically loaded, this
+        /* for the below, the initialization of ep does not need to be atomically loaded, this
          * will never change once it's non-NULL
          * ep->next can change, however, when last->next is updated below
          * entries are never freed/deleted, pointers never changed. this means i can likely not worry
