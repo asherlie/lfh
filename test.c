@@ -1,7 +1,7 @@
 #include <pthread.h>
 #include <assert.h>
 
-#include "lfh.h"
+#include <lfh.h>
 
 uint16_t hfunc(int x) {
     return x;

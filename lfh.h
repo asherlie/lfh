@@ -89,12 +89,12 @@
             } \
             for (struct entry_##name* ep = atomic_load(&l->buckets[i]); ep; ep = atomic_load(&ep->next)) { \
                 v = atomic_load(&ep->kv.v); \
-                fprintf(fp, "  [%li] ", sz); \
+                fprintf(fp, "  [%lli] ", sz); \
                 fprintf(fp, fmtstr, ep->kv.k, v); \
                 fprintf(fp, "\n"); \
                 ++sz; \
             } \
         } \
-        fprintf(fp, "%li keys found\n", sz); \
+        fprintf(fp, "%lli keys found\n", sz); \
         return sz; \
     }
