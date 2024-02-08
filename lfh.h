@@ -1,4 +1,9 @@
 // TODO: should removal be possible? it may be safer to just allow the user to overwrite
+// TODO: include entry_##name_foreach - this will allow programmers to take advantage
+// of their hash functions to use the value linked list as the threadsafe lock free LL it is
+// for example, the programmer of a reminder program could have a hashing function that hashes on 
+// month and day, but not contents of reminder
+// the foreach #define would let the user take advantage of the structure of lfhash
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -89,12 +94,12 @@
             } \
             for (struct entry_##name* ep = atomic_load(&l->buckets[i]); ep; ep = atomic_load(&ep->next)) { \
                 v = atomic_load(&ep->kv.v); \
-                fprintf(fp, "  [%lli] ", sz); \
+                fprintf(fp, "  [%li] ", sz); \
                 fprintf(fp, fmtstr, ep->kv.k, v); \
                 fprintf(fp, "\n"); \
                 ++sz; \
             } \
         } \
-        fprintf(fp, "%lli keys found\n", sz); \
+        fprintf(fp, "%li keys found\n", sz); \
         return sz; \
     }
