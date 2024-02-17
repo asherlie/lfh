@@ -91,6 +91,12 @@
     _foreach_entry_idx(name, l, idx, ep) \
         iterk = ep->kv.k; 
 
+#define _foreach_entry_kptr(name, l, k, iterkptr) \
+    uint16_t idx = l->hashfunc(k); \
+    struct entry_pair_##name* ep; \
+    _foreach_entry_idx(name, l, idx, ep) \
+        iterkptr = &ep->kv.k; 
+
 #define _foreach_entry_v(name, l, k, iterv) \
     uint16_t idx = l->hashfunc(k); \
     struct entry_pair_##name* ep; \
@@ -102,6 +108,10 @@
     _foreach_entry_k(name, l, k, iterk) \
         iterv = atomic_load(&ep->kv.v);
         
+#define _foreach_entry_kptrv(name, l, k, iterkptr, iterv) \
+    struct entry_pair_##name* ep; \
+    _foreach_entry_kptr(name, l, k, iterkptr) \
+        iterv = atomic_load(&ep->kv.v);
     
     
 
@@ -145,6 +155,7 @@
         insert_overwrite: \
         /* dealing with first insertion */ \
         nil_entry = NULL; \
+        /* there is no advantage to precomputing idx, two branches will never both be reached */ \
         if (atomic_compare_exchange_strong(&l->buckets[idx], &nil_entry, new_e)) { \
             return; \
         } \
