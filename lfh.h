@@ -83,12 +83,26 @@
 /* new def */
 
 #define _foreach_entry_idx(name, l, idx, iter_entry) \
-    for (struct entry_##name* iter_entry = atomic_load(&l->buckets[idx]); iter_entry; iter_entry = atomic_load(&iter_entry->next))
+    for (struct entry_##name* iter_entry = atomic_load(&l->buckets[idx]); iter_entry; iter_entry = atomic_load(&iter_entry->next)) {
 
 #define _foreach_entry_k(name, l, k, iterk) \
-    _foreach_entry_idx(name, l, 0, ep)
-#define _foreach_entry_v(name, l, k, iterv)
+    uint16_t idx = l->hashfunc(k); \
+    struct entry_pair_##name* ep; \
+    _foreach_entry_idx(name, l, idx, ep) \
+        iterk = ep->kv.k; 
+
+#define _foreach_entry_v(name, l, k, iterv) \
+    uint16_t idx = l->hashfunc(k); \
+    struct entry_pair_##name* ep; \
+    _foreach_entry_idx(name, l, idx, ep) \
+        iterv = atomic_load(&ep->kv.v);
+
 #define _foreach_entry_kv(name, l, k, iterk, iterv) \
+    struct entry_pair_##name* ep; \
+    _foreach_entry_k(name, l, k, iterk) \
+        iterv = atomic_load(&ep->kv.v);
+        
+    
     
 
 #define register_lockfree_hash(keytype, valtype, name) \
