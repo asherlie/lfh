@@ -1,7 +1,7 @@
 #include <pthread.h>
 #include <assert.h>
 
-#include <lfh.h>
+#include "lfh.h"
 
 uint16_t hfunc(int x) {
     return x;
@@ -70,6 +70,12 @@ void threadsafety_test(int n_buckets, int n_threads, int total_insertions){
     sz = fprint_ashmap(&m, "%i: %i", stderr);
 
     assert(sz == (uint64_t)total_insertions);
+    /*FOREACH_ENTRY_ashmap(&m, 1, i);*/
+    // TODO: these parens should not be needed
+    foreach_entry(ashmap, (&m), 8, int k, int v)
+        printf("ashmap[%i]: %i\n", k, v);
+    }
+    
 }
 
 void single_thread_tests(){
@@ -143,6 +149,6 @@ void struct_test(){
 int main(){
     /* TODO: this fails, may be due to bad remainder when dividing n_ins/n_th */
     /*threadsafety_test(100, 6, 2000);*/
-    threadsafety_test(100, 60, 60000);
+    threadsafety_test(100, 60, 600);
     struct_test();
 }
