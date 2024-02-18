@@ -73,7 +73,7 @@ void threadsafety_test(int n_buckets, int n_threads, int total_insertions){
     /*FOREACH_ENTRY_ashmap(&m, 1, i);*/
     // TODO: these parens should not be needed
 
-    _foreach_entry_kv(ashmap, &m, 8, key, val)
+    foreach_entry_kv(ashmap, &m, 8, key, val)
         printf("ashmap[%i]: %i\n", key, val);
     }
     

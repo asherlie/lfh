@@ -1,5 +1,5 @@
 // TODO: should removal be possible? it may be safer to just allow the user to overwrite
-// TODO: include entry_##name_foreach - this will allow programmers to take advantage
+// TODO: include entry_##nameforeach - this will allow programmers to take advantage
 // of their hash functions to use the value linked list as the threadsafe lock free LL it is
 // for example, the programmer of a reminder program could have a hashing function that hashes on 
 // month and day, but not contents of reminder
@@ -57,55 +57,55 @@
  * if hashfunc(key) % bux == idxgt
  * find a way to have just one function take in both key and idx, if key, use HASH() first, ah, make hash() return the same thing!
 */
-#define _foreach_entry_idx(name, l, idx, iter_entry) \
+#define foreach_entry_idx(name, l, idx, iter_entry) \
     for (struct entry_##name* iter_entry = atomic_load(&(l)->buckets[idx]); iter_entry; iter_entry = atomic_load(&iter_entry->next)) {
 
 // TODO: rename ep so it's less likely to be already defined
-#define _foreach_entry_k(name, l, key, iterk) \
+#define foreach_entry_k(name, l, key, iterk) \
     uint16_t idx = HASH(l, key); \
-    _foreach_entry_idx(name, l, idx, ep) \
+    foreach_entry_idx(name, l, idx, ep) \
         iterk = ep->kv.k; 
 
-#define _foreach_entry_kptr(name, l, key, iterkptr) \
+#define foreach_entry_kptr(name, l, key, iterkptr) \
     uint16_t idx = HASH(l, key); \
-    _foreach_entry_idx(name, l, idx, ep) \
+    foreach_entry_idx(name, l, idx, ep) \
         iterkptr = &ep->kv.k; 
 
-#define _foreach_entry_v(name, l, key, iterv) \
+#define foreach_entry_v(name, l, key, iterv) \
     uint16_t idx = HASH(l, key); \
-    _foreach_entry_idx(name, l, idx, ep) \
+    foreach_entry_idx(name, l, idx, ep) \
         iterv = atomic_load(&ep->kv.v);
 
-#define _foreach_entry_kv(name, l, key, iterk, iterv) \
-    _foreach_entry_k(name, l, key, iterk) \
+#define foreach_entry_kv(name, l, key, iterk, iterv) \
+    foreach_entry_k(name, l, key, iterk) \
         iterv = atomic_load(&ep->kv.v);
         
-#define _foreach_entry_kptrv(name, l, key, iterkptr, iterv) \
-    _foreach_entry_kptr(name, l, key, iterkptr) \
+#define foreach_entry_kptrv(name, l, key, iterkptr, iterv) \
+    foreach_entry_kptr(name, l, key, iterkptr) \
         iterv = atomic_load(&ep->kv.v);
 
 /*
- * #define _foreach_entry_e_k(name, l, key, iterk, iter_entry) \
+ * #define foreach_entry_e_k(name, l, key, iterk, iter_entry) \
  *     uint16_t idx = HASH(l, key); \
- *     _foreach_entry_idx(name, l, idx, iter_entry) \
+ *     foreach_entry_idx(name, l, idx, iter_entry) \
  *         iterk = iter_entry->kv.k; 
  * 
- * #define _foreach_entry_e_kptr(name, l, key, iterkptr, iter_entry) \
+ * #define foreach_entry_e_kptr(name, l, key, iterkptr, iter_entry) \
  *     uint16_t idx = HASH(l, key); \
- *     _foreach_entry_idx(name, l, idx, iter_entry) \
+ *     foreach_entry_idx(name, l, idx, iter_entry) \
  *         iterkptr = &iter_entry->kv.k; 
  * 
- * #define _foreach_entry_e_v(name, l, key, iterv, iter_entry) \
+ * #define foreach_entry_e_v(name, l, key, iterv, iter_entry) \
  *     uint16_t idx = HASH(l, key); \
- *     _foreach_entry_idx(name, l, idx, iter_entry) \
+ *     foreach_entry_idx(name, l, idx, iter_entry) \
  *         iterv = atomic_load(&iter_entry->kv.v);
  * 
- * #define _foreach_entry_e_kv(name, l, key, iterk, iterv, iter_entry) \
- *     _foreach_entry_e_k(name, l, key, iterk, iter_entry) \
+ * #define foreach_entry_e_kv(name, l, key, iterk, iterv, iter_entry) \
+ *     foreach_entry_e_k(name, l, key, iterk, iter_entry) \
  *         iterv = atomic_load(&iter_entry->kv.v);
  *         
- * #define _foreach_entry_e_kptrv(name, l, key, iterkptr, iterv, iter_entry) \
- *     _foreach_entry_e_kptr(name, l, key, iterkptr, iter_entry) \
+ * #define foreach_entry_e_kptrv(name, l, key, iterkptr, iterv, iter_entry) \
+ *     foreach_entry_e_kptr(name, l, key, iterkptr, iter_entry) \
  *         iterv = atomic_load(&iter_entry->kv.v);
  *     
 */
@@ -156,7 +156,7 @@
             return; \
         } \
         /* TODO: why does compiler allow removal of atomic_load()s below? */ \
-        _foreach_entry_kptr(name, l, key, kptr) \
+        foreach_entry_kptr(name, l, key, kptr) \
             last = ep; \
             if (!memcmp(kptr, &key, sizeof(keytype))) { \
                 atomic_store(&ep->kv.v, val); \
@@ -174,7 +174,7 @@
         keytype* kptr; \
         memset(&ret, 0, sizeof(valtype)); \
         *found = 0; \
-        _foreach_entry_kptrv(name, l, key, kptr, ret) \
+        foreach_entry_kptrv(name, l, key, kptr, ret) \
             if (!memcmp(kptr, &key, sizeof(keytype))){ \
                 *found = 1; \
                 /* interesting! this is only failing with pointer keys! value can be anything, pointer KEYS are bad */ \
@@ -192,7 +192,7 @@
             if (l->buckets[i]) { \
                 fprintf(fp, "buckets[%i]:\n", i); \
             } \
-            _foreach_entry_idx(name, l, i, ep) \
+            foreach_entry_idx(name, l, i, ep) \
                 v = atomic_load(&ep->kv.v); \
                 fprintf(fp, "  [%li] ", sz); \
                 fprintf(fp, fmtstr, ep->kv.k, v); \
