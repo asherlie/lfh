@@ -40,7 +40,7 @@ void threadsafety_test(int n_buckets, int n_threads, int total_insertions){
     ashmap m;
     struct tsafe_test* tst;
     int ins_per_thread = total_insertions/n_threads;
-    int val;
+    int key, val;
     uint64_t sz;
     _Bool found;
 
@@ -72,8 +72,9 @@ void threadsafety_test(int n_buckets, int n_threads, int total_insertions){
     assert(sz == (uint64_t)total_insertions);
     /*FOREACH_ENTRY_ashmap(&m, 1, i);*/
     // TODO: these parens should not be needed
-    foreach_entry(ashmap, (&m), 8, int k, int v)
-        printf("ashmap[%i]: %i\n", k, v);
+
+    _foreach_entry_kv(ashmap, &m, 8, key, val)
+        printf("ashmap[%i]: %i\n", key, val);
     }
     
 }
