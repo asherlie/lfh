@@ -170,6 +170,7 @@
         struct entry_##name* last; \
         struct entry_##name* nil_entry; \
         struct entry_##name* new_e = malloc(sizeof(struct entry_##name)); \
+        keytype* kptr; \
         new_e->kv.k = key;\
         atomic_store(&new_e->kv.v, val); \
         new_e->next = NULL; \
@@ -181,7 +182,6 @@
             return; \
         } \
         /* TODO: why does compiler allow removal of atomic_load()s below? */ \
-        keytype* kptr; \
         _foreach_entry_kptr(name, l, key, kptr) \
             last = ep; \
             if (!memcmp(kptr, &key, sizeof(keytype))) { \
@@ -197,16 +197,17 @@
 \
     valtype lookup_##name(name* l, keytype key, _Bool* found) { \
         valtype ret; \
-        uint16_t idx = l->hashfunc(key) % l->n_buckets; \
+        keytype* kptr; \
+        /* uint16_t idx = l->hashfunc(key) % l->n_buckets; */\
 \
         memset(&ret, 0, sizeof(valtype)); \
         *found = 0; \
 \
-        for (struct entry_##name* ep = atomic_load(&l->buckets[idx]); ep; ep = atomic_load(&ep->next)){ \
-            if (!memcmp(&ep->kv.k, &key, sizeof(keytype))){ \
+        /* for (struct entry_##name* ep = atomic_load(&l->buckets[idx]); ep; ep = atomic_load(&ep->next)){ */\
+        _foreach_entry_kptrv(name, l, key, kptr, ret) \
+            if (!memcmp(kptr, &key, sizeof(keytype))){ \
                 *found = 1; \
                 /* interesting! this is only failing with pointer keys! value can be anything, pointer KEYS are bad */ \
-                ret = atomic_load(&ep->kv.v); \
                 return ret; \
             } \
         } \
