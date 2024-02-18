@@ -183,11 +183,8 @@
         /* TODO: why does compiler allow removal of atomic_load()s below? */ \
         keytype* kptr; \
         _foreach_entry_kptr(name, l, key, kptr) \
-        /* _foreach_entry_idx(name, l, l->hashfunc(key) % l->n_buckets, ep)*/\
-        /* for (struct entry_##name* ep = atomic_load(&l->buckets[l->hashfunc(key) % l->n_buckets]); ep; ep = atomic_load(&ep->next)) { */\
             last = ep; \
             if (!memcmp(kptr, &key, sizeof(keytype))) { \
-            /* if (!memcmp(&ep->kv.k, &key, sizeof(keytype))) { */\
                 atomic_store(&ep->kv.v, val); \
                 return; \
             }\
