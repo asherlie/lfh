@@ -82,36 +82,58 @@
 
 /* new def */
 
+#define HASH(l, key) l->hashfunc(key) % l->n_buckets
+
 #define _foreach_entry_idx(name, l, idx, iter_entry) \
     for (struct entry_##name* iter_entry = atomic_load(&l->buckets[idx]); iter_entry; iter_entry = atomic_load(&iter_entry->next)) {
 
-#define _foreach_entry_k(name, l, k, iterk) \
-    uint16_t idx = l->hashfunc(k); \
+// TODO: rename ep so it's less likely to be already defined
+#define _foreach_entry_k(name, l, key, iterk) \
+    uint16_t idx = HASH(l, key); \
     struct entry_pair_##name* ep; \
     _foreach_entry_idx(name, l, idx, ep) \
         iterk = ep->kv.k; 
 
-#define _foreach_entry_kptr(name, l, k, iterkptr) \
-    uint16_t idx = l->hashfunc(k); \
-    struct entry_pair_##name* ep; \
+#define _foreach_entry_kptr(name, l, key, iterkptr) \
+    uint16_t idx = HASH(l, key); \
     _foreach_entry_idx(name, l, idx, ep) \
         iterkptr = &ep->kv.k; 
 
-#define _foreach_entry_v(name, l, k, iterv) \
-    uint16_t idx = l->hashfunc(k); \
-    struct entry_pair_##name* ep; \
+#define _foreach_entry_v(name, l, key, iterv) \
+    uint16_t idx = HASH(l, key); \
     _foreach_entry_idx(name, l, idx, ep) \
         iterv = atomic_load(&ep->kv.v);
 
-#define _foreach_entry_kv(name, l, k, iterk, iterv) \
-    struct entry_pair_##name* ep; \
-    _foreach_entry_k(name, l, k, iterk) \
+#define _foreach_entry_kv(name, l, key, iterk, iterv) \
+    _foreach_entry_k(name, l, key, iterk) \
         iterv = atomic_load(&ep->kv.v);
         
-#define _foreach_entry_kptrv(name, l, k, iterkptr, iterv) \
-    struct entry_pair_##name* ep; \
-    _foreach_entry_kptr(name, l, k, iterkptr) \
+#define _foreach_entry_kptrv(name, l, key, iterkptr, iterv) \
+    _foreach_entry_kptr(name, l, key, iterkptr) \
         iterv = atomic_load(&ep->kv.v);
+
+#define _foreach_entry_e_k(name, l, key, iterk, iter_entry) \
+    uint16_t idx = HASH(l, key); \
+    _foreach_entry_idx(name, l, idx, iter_entry) \
+        iterk = iter_entry->kv.k; 
+
+#define _foreach_entry_e_kptr(name, l, key, iterkptr, iter_entry) \
+    uint16_t idx = HASH(l, key); \
+    _foreach_entry_idx(name, l, idx, iter_entry) \
+        iterkptr = &iter_entry->kv.k; 
+
+#define _foreach_entry_e_v(name, l, key, iterv, iter_entry) \
+    uint16_t idx = HASH(l, key); \
+    _foreach_entry_idx(name, l, idx, iter_entry) \
+        iterv = atomic_load(&iter_entry->kv.v);
+
+#define _foreach_entry_e_kv(name, l, key, iterk, iterv, iter_entry) \
+    _foreach_entry_e_k(name, l, key, iterk, iter_entry) \
+        iterv = atomic_load(&iter_entry->kv.v);
+        
+#define _foreach_entry_e_kptrv(name, l, key, iterkptr, iterv, iter_entry) \
+    _foreach_entry_e_kptr(name, l, key, iterkptr, iter_entry) \
+        iterv = atomic_load(&iter_entry->kv.v);
     
     
 
@@ -145,7 +167,6 @@
     } \
  \
     void insert_##name(name* l, keytype key, valtype val){ \
-        uint16_t idx = l->hashfunc(key) % l->n_buckets; \
         struct entry_##name* last; \
         struct entry_##name* nil_entry; \
         struct entry_##name* new_e = malloc(sizeof(struct entry_##name)); \
@@ -156,13 +177,17 @@
         /* dealing with first insertion */ \
         nil_entry = NULL; \
         /* there is no advantage to precomputing idx, two branches will never both be reached */ \
-        if (atomic_compare_exchange_strong(&l->buckets[idx], &nil_entry, new_e)) { \
+        if (atomic_compare_exchange_strong(&l->buckets[l->hashfunc(key) % l->n_buckets], &nil_entry, new_e)) { \
             return; \
         } \
         /* TODO: why does compiler allow removal of atomic_load()s below? */ \
-        for (struct entry_##name* ep = atomic_load(&l->buckets[idx]); ep; ep = atomic_load(&ep->next)){ \
+        keytype* kptr; \
+        _foreach_entry_kptr(name, l, key, kptr) \
+        /* _foreach_entry_idx(name, l, l->hashfunc(key) % l->n_buckets, ep)*/\
+        /* for (struct entry_##name* ep = atomic_load(&l->buckets[l->hashfunc(key) % l->n_buckets]); ep; ep = atomic_load(&ep->next)) { */\
             last = ep; \
-            if (!memcmp(&ep->kv.k, &key, sizeof(keytype))) { \
+            if (!memcmp(kptr, &key, sizeof(keytype))) { \
+            /* if (!memcmp(&ep->kv.k, &key, sizeof(keytype))) { */\
                 atomic_store(&ep->kv.v, val); \
                 return; \
             }\
