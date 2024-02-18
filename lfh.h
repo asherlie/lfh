@@ -51,46 +51,18 @@
  * then we have combinations of key and value
 */
 
-#define foreach_entry_idx_kptr(name, l, idx, iterkptr, iterv) \
-    for (struct entry_##name* _internal_foreach_e = atomic_load(&l->buckets[idx]); _internal_foreach_e; _internal_foreach_e = atomic_load(&_internal_foreach_e->next)){ \
-        /* kv.k must be cast to a  */ \
-        iterkptr = (void*)&_internal_foreach_e->kv.k; \
-        iterv = atomic_load(&_internal_foreach_e->kv.v);
+#define HASH(l, key) (l)->hashfunc(key) % (l)->n_buckets
 
-// TODO: should i implement foreach_entry_idx() without key pointer?
-// this can be done using keypointer like this:
 /*
- * #define foreach_entry_idx(name, l, idx, iterk, iterv) \
- *     for (struct entry_##name* e = atomic_load(&l->buckets[idx]); e; e = atomic_load(&e->next)){ \
- *         iterk = e->kv.k; \
- *         iterv = atomic_load(&e->kv.v);
+ * if hashfunc(key) % bux == idxgt
+ * find a way to have just one function take in both key and idx, if key, use HASH() first, ah, make hash() return the same thing!
 */
-
-// TODO: can just use a void*, this is a bit easier becuse we can just pretend that entry_pair* is a pointer to just k, it's at beginning anyway
-// TODO: is it safer to use a void* and memcpy() into spoof_e.k? this ensures no weirdness with data format, what if there's padding?
-// TODO: it probably makes more sense to just duplicate code between this and _kptr() because we don't waste the bytes of spoof_e.v
-// that way we can just set iterk = kv.k
-// actually, we're not even wasting space really because we're just using a pointer, still though, a pointer is larger than let's say, an int
-#define foreach_entry_idx(name, l, idx, iterk, iterv) \
-    struct entry_pair_##name* _internal_foreach_spoof_e; \
-    foreach_entry_idx_kptr(name, l, idx, _internal_foreach_spoof_e, iterv) \
-        iterk = _internal_foreach_spoof_e->k;
-
-#define foreach_entry(name, l, k, iterk, iterv) \
-    uint16_t _internal_foreach_idx = (l)->hashfunc(k) % (l)->n_buckets; \
-    foreach_entry_idx(name, l, _internal_foreach_idx, iterk, iterv)
-
-/* new def */
-
-#define HASH(l, key) l->hashfunc(key) % l->n_buckets
-
 #define _foreach_entry_idx(name, l, idx, iter_entry) \
-    for (struct entry_##name* iter_entry = atomic_load(&l->buckets[idx]); iter_entry; iter_entry = atomic_load(&iter_entry->next)) {
+    for (struct entry_##name* iter_entry = atomic_load(&(l)->buckets[idx]); iter_entry; iter_entry = atomic_load(&iter_entry->next)) {
 
 // TODO: rename ep so it's less likely to be already defined
 #define _foreach_entry_k(name, l, key, iterk) \
     uint16_t idx = HASH(l, key); \
-    struct entry_pair_##name* ep; \
     _foreach_entry_idx(name, l, idx, ep) \
         iterk = ep->kv.k; 
 
@@ -112,29 +84,31 @@
     _foreach_entry_kptr(name, l, key, iterkptr) \
         iterv = atomic_load(&ep->kv.v);
 
-#define _foreach_entry_e_k(name, l, key, iterk, iter_entry) \
-    uint16_t idx = HASH(l, key); \
-    _foreach_entry_idx(name, l, idx, iter_entry) \
-        iterk = iter_entry->kv.k; 
-
-#define _foreach_entry_e_kptr(name, l, key, iterkptr, iter_entry) \
-    uint16_t idx = HASH(l, key); \
-    _foreach_entry_idx(name, l, idx, iter_entry) \
-        iterkptr = &iter_entry->kv.k; 
-
-#define _foreach_entry_e_v(name, l, key, iterv, iter_entry) \
-    uint16_t idx = HASH(l, key); \
-    _foreach_entry_idx(name, l, idx, iter_entry) \
-        iterv = atomic_load(&iter_entry->kv.v);
-
-#define _foreach_entry_e_kv(name, l, key, iterk, iterv, iter_entry) \
-    _foreach_entry_e_k(name, l, key, iterk, iter_entry) \
-        iterv = atomic_load(&iter_entry->kv.v);
-        
-#define _foreach_entry_e_kptrv(name, l, key, iterkptr, iterv, iter_entry) \
-    _foreach_entry_e_kptr(name, l, key, iterkptr, iter_entry) \
-        iterv = atomic_load(&iter_entry->kv.v);
-    
+/*
+ * #define _foreach_entry_e_k(name, l, key, iterk, iter_entry) \
+ *     uint16_t idx = HASH(l, key); \
+ *     _foreach_entry_idx(name, l, idx, iter_entry) \
+ *         iterk = iter_entry->kv.k; 
+ * 
+ * #define _foreach_entry_e_kptr(name, l, key, iterkptr, iter_entry) \
+ *     uint16_t idx = HASH(l, key); \
+ *     _foreach_entry_idx(name, l, idx, iter_entry) \
+ *         iterkptr = &iter_entry->kv.k; 
+ * 
+ * #define _foreach_entry_e_v(name, l, key, iterv, iter_entry) \
+ *     uint16_t idx = HASH(l, key); \
+ *     _foreach_entry_idx(name, l, idx, iter_entry) \
+ *         iterv = atomic_load(&iter_entry->kv.v);
+ * 
+ * #define _foreach_entry_e_kv(name, l, key, iterk, iterv, iter_entry) \
+ *     _foreach_entry_e_k(name, l, key, iterk, iter_entry) \
+ *         iterv = atomic_load(&iter_entry->kv.v);
+ *         
+ * #define _foreach_entry_e_kptrv(name, l, key, iterkptr, iterv, iter_entry) \
+ *     _foreach_entry_e_kptr(name, l, key, iterkptr, iter_entry) \
+ *         iterv = atomic_load(&iter_entry->kv.v);
+ *     
+*/
     
 
 #define register_lockfree_hash(keytype, valtype, name) \
@@ -178,7 +152,7 @@
         /* dealing with first insertion */ \
         nil_entry = NULL; \
         /* there is no advantage to precomputing idx, two branches will never both be reached */ \
-        if (atomic_compare_exchange_strong(&l->buckets[l->hashfunc(key) % l->n_buckets], &nil_entry, new_e)) { \
+        if (atomic_compare_exchange_strong(&l->buckets[HASH(l, key)], &nil_entry, new_e)) { \
             return; \
         } \
         /* TODO: why does compiler allow removal of atomic_load()s below? */ \
@@ -198,12 +172,8 @@
     valtype lookup_##name(name* l, keytype key, _Bool* found) { \
         valtype ret; \
         keytype* kptr; \
-        /* uint16_t idx = l->hashfunc(key) % l->n_buckets; */\
-\
         memset(&ret, 0, sizeof(valtype)); \
         *found = 0; \
-\
-        /* for (struct entry_##name* ep = atomic_load(&l->buckets[idx]); ep; ep = atomic_load(&ep->next)){ */\
         _foreach_entry_kptrv(name, l, key, kptr, ret) \
             if (!memcmp(kptr, &key, sizeof(keytype))){ \
                 *found = 1; \
@@ -222,7 +192,7 @@
             if (l->buckets[i]) { \
                 fprintf(fp, "buckets[%i]:\n", i); \
             } \
-            for (struct entry_##name* ep = atomic_load(&l->buckets[i]); ep; ep = atomic_load(&ep->next)) { \
+            _foreach_entry_idx(name, l, i, ep) \
                 v = atomic_load(&ep->kv.v); \
                 fprintf(fp, "  [%li] ", sz); \
                 fprintf(fp, fmtstr, ep->kv.k, v); \
@@ -233,12 +203,3 @@
         fprintf(fp, "%li keys found\n", sz); \
         return sz; \
     }
-    //#define FOREACH_ENTRY_##NAME(a) a
-/*
- * 
- * 
- * 
- *  * #define FOREACH_ENTRY(l, k, iter) \
- *  *     uint16_t idx = l->hashfunc(k) % l->n_buckets; \
- *  *     for (valtype i = 
-*/
